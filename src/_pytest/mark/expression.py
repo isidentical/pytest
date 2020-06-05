@@ -27,7 +27,7 @@ from typing import Sequence
 
 import attr
 
-from _pytest.compat import TYPE_CHECKING
+from _pytest.compat import TYPE_CHECKING, _ident_to_name
 
 if TYPE_CHECKING:
     from typing import NoReturn
@@ -161,7 +161,7 @@ def not_expr(s: Scanner) -> ast.expr:
         return ret
     ident = s.accept(TokenType.IDENT)
     if ident:
-        return ast.Name(ident.value, ast.Load())
+        return _ident_to_name(ident.value)
     s.reject((TokenType.NOT, TokenType.LPAREN, TokenType.IDENT))
 
 

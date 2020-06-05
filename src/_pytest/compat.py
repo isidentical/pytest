@@ -1,6 +1,7 @@
 """
 python version compatibility code
 """
+import ast
 import enum
 import functools
 import inspect
@@ -401,3 +402,9 @@ else:
     from collections import OrderedDict
 
     order_preserving_dict = OrderedDict
+
+def _ident_to_name(name: str):
+    if name in ("True", "False", "None") and sys.version_info >= (3, 8):
+        return ast.Constant(name)
+    else:
+        return ast.Name(name, ast.Load())
