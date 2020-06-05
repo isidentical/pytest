@@ -209,12 +209,12 @@ class TestEnvironWarnings:
     VAR_NAME = "PYTEST_INTERNAL_MY_VAR"
 
     def test_setenv_non_str_warning(self, monkeypatch):
-        value = 2
         msg = (
             "Value of environment variable PYTEST_INTERNAL_MY_VAR type should be str, "
             "but got 2 (type: int); converted to str implicitly"
         )
         with pytest.warns(pytest.PytestWarning, match=re.escape(msg)):
+            value = 2
             monkeypatch.setenv(str(self.VAR_NAME), value)
 
 

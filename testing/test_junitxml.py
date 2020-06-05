@@ -235,8 +235,7 @@ class TestPython:
 
         def node_reporter_wrapper(s, report):
             report.duration = 1.0
-            reporter = original_node_reporter(s, report)
-            return reporter
+            return original_node_reporter(s, report)
 
         monkeypatch.setattr(LogXML, "node_reporter", node_reporter_wrapper)
 
@@ -943,10 +942,10 @@ def test_nullbyte(testdir, junit_logging):
     testdir.runpytest("--junitxml=%s" % xmlf, "-o", "junit_logging=%s" % junit_logging)
     text = xmlf.read()
     assert "\x00" not in text
-    if junit_logging == "system-out":
-        assert "#x00" in text
     if junit_logging == "no":
         assert "#x00" not in text
+    elif junit_logging == "system-out":
+        assert "#x00" in text
 
 
 @pytest.mark.parametrize("junit_logging", ["no", "system-out"])
@@ -964,10 +963,10 @@ def test_nullbyte_replace(testdir, junit_logging):
     xmlf = testdir.tmpdir.join("junit.xml")
     testdir.runpytest("--junitxml=%s" % xmlf, "-o", "junit_logging=%s" % junit_logging)
     text = xmlf.read()
-    if junit_logging == "system-out":
-        assert "#x0" in text
     if junit_logging == "no":
         assert "#x0" not in text
+    elif junit_logging == "system-out":
+        assert "#x0" in text
 
 
 def test_invalid_xml_escape():

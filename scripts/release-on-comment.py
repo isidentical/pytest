@@ -80,10 +80,7 @@ def validate_and_get_issue_comment_payload(
     payload = json.loads(issue_payload_path.read_text(encoding="UTF-8"))
     body = get_comment_data(payload)["body"]
     m = re.match(r"@pytestbot please prepare release from ([\w\-_\.]+)", body)
-    if m:
-        base_branch = m.group(1)
-    else:
-        base_branch = None
+    base_branch = m.group(1) if m else None
     return payload, base_branch
 
 

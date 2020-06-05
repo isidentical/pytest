@@ -144,10 +144,7 @@ class Source:
         """ return True if source is parseable, heuristically
             deindenting it by default.
         """
-        if deindent:
-            source = str(self.deindent())
-        else:
-            source = str(self)
+        source = str(self.deindent()) if deindent else str(self)
         try:
             ast.parse(source)
         except (SyntaxError, ValueError, TypeError):
@@ -299,11 +296,15 @@ def getrawcode(obj, trycall: bool = True):
     except AttributeError:
         obj = getattr(obj, "f_code", obj)
         obj = getattr(obj, "__code__", obj)
-        if trycall and not hasattr(obj, "co_firstlineno"):
-            if hasattr(obj, "__call__") and not inspect.isclass(obj):
-                x = getrawcode(obj.__call__, trycall=False)
-                if hasattr(x, "co_firstlineno"):
-                    return x
+        if (
+            trycall
+            and not hasattr(obj, "co_firstlineno")
+            and hasattr(obj, "__call__")
+            and not inspect.isclass(obj)
+        ):
+            x = getrawcode(obj.__call__, trycall=False)
+            if hasattr(x, "co_firstlineno"):
+                return x
         return obj
 
 
@@ -336,10 +337,7 @@ def get_statement_startend2(lineno: int, node: ast.AST) -> Tuple[int, Optional[i
     values.sort()
     insert_index = bisect_right(values, lineno)
     start = values[insert_index - 1]
-    if insert_index >= len(values):
-        end = None
-    else:
-        end = values[insert_index]
+    end = None if insert_index >= len(values) else values[insert_index]
     return start, end
 
 

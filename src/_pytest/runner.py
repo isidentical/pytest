@@ -214,11 +214,11 @@ def call_and_report(
 
 
 def check_interactive_exception(call: "CallInfo", report: BaseReport) -> bool:
-    return call.excinfo is not None and not (
+    return not (call.excinfo is None or (
         hasattr(report, "wasxfail")
         or call.excinfo.errisinstance(Skipped)
         or call.excinfo.errisinstance(bdb.BdbQuit)
-    )
+    ))
 
 
 def call_runtest_hook(

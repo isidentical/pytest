@@ -571,7 +571,7 @@ def test_linematcher_no_matching(function) -> None:
     )
 
     # check the function twice to ensure we don't accumulate the internal buffer
-    for i in range(2):
+    for _ in range(2):
         with pytest.raises(pytest.fail.Exception) as e:
             func = getattr(lm, function)
             func(good_pattern)

@@ -251,9 +251,6 @@ def pytest_report_header(config: Config) -> List[str]:
         lines.append("active plugins:")
         items = config.pluginmanager.list_name_plugin()
         for name, plugin in items:
-            if hasattr(plugin, "__file__"):
-                r = plugin.__file__
-            else:
-                r = repr(plugin)
+            r = plugin.__file__ if hasattr(plugin, "__file__") else repr(plugin)
             lines.append("    {:<20}: {}".format(name, r))
     return lines

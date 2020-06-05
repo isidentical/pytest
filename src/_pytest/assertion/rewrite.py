@@ -212,12 +212,11 @@ class AssertionRewritingHook(importlib.abc.MetaPathFinder, importlib.abc.Loader)
             state.trace("rewriting conftest file: {!r}".format(fn))
             return True
 
-        if self.session is not None:
-            if self.session.isinitpath(fn):
-                state.trace(
-                    "matched test file (was specified on cmdline): {!r}".format(fn)
-                )
-                return True
+        if self.session is not None and self.session.isinitpath(fn):
+            state.trace(
+                "matched test file (was specified on cmdline): {!r}".format(fn)
+            )
+            return True
 
         # modules not passed explicitly on the command line are only
         # rewritten if they match the naming convention for test files
@@ -255,9 +254,10 @@ class AssertionRewritingHook(importlib.abc.MetaPathFinder, importlib.abc.Loader)
         )
         for name in already_imported:
             mod = sys.modules[name]
-            if not AssertionRewriter.is_rewrite_disabled(
-                mod.__doc__ or ""
-            ) and not isinstance(mod.__loader__, type(self)):
+            if not (
+                AssertionRewriter.is_rewrite_disabled(mod.__doc__ or "")
+                or isinstance(mod.__loader__, type(self))
+            ):
                 self._warn_already_imported(name)
         self._must_rewrite.update(names)
         self._marked_for_rewrite_cache.clear()
@@ -870,8 +870,7 @@ class AssertionRewriter(ast.NodeVisitor):
             fmt = self.helper("_format_explanation", err_msg)
             exc = ast.Call(err_name, [fmt], [])
             raise_ = ast.Raise(exc, None)
-            statements_fail = []
-            statements_fail.extend(self.expl_stmts)
+            statements_fail = list(self.expl_stmts)
             statements_fail.append(raise_)
 
             # Passed
@@ -903,7 +902,7 @@ class AssertionRewriter(ast.NodeVisitor):
                 clear_format = ast.Assign(variables, ast.NameConstant(None))
                 self.statements.append(clear_format)
 
-        else:  # Original assertion rewriting
+        else:    # Original assertion rewriting
             # Create failure message.
             body = self.expl_stmts
             self.statements.append(ast.If(negation, body, []))

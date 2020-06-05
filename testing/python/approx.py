@@ -88,9 +88,9 @@ class TestApprox:
 
     def test_operator_overloading(self):
         assert 1 == approx(1, rel=1e-6, abs=1e-12)
-        assert not (1 != approx(1, rel=1e-6, abs=1e-12))
+        assert approx(1, rel=1e-6, abs=1e-12) == 1
         assert 10 != approx(1, rel=1e-6, abs=1e-12)
-        assert not (10 == approx(1, rel=1e-6, abs=1e-12))
+        assert approx(1, rel=1e-6, abs=1e-12) != 10
 
     def test_exactly_equal(self):
         examples = [
@@ -132,7 +132,7 @@ class TestApprox:
         ]
         for kwargs in illegal_kwargs:
             with pytest.raises(ValueError):
-                1.1 == approx(1, **kwargs)
+                approx(1, **kwargs) == 1.1
 
     def test_inf_tolerance(self):
         # Everything should be equal if the tolerance is infinite.
@@ -149,13 +149,13 @@ class TestApprox:
         illegal_kwargs = [dict(rel=inf, abs=0.0), dict(rel=inf, abs=inf)]
         for kwargs in illegal_kwargs:
             with pytest.raises(ValueError):
-                1 == approx(0, **kwargs)
+                approx(0, **kwargs) == 1
 
     def test_nan_tolerance(self):
         illegal_kwargs = [dict(rel=nan), dict(abs=nan), dict(rel=nan, abs=nan)]
         for kwargs in illegal_kwargs:
             with pytest.raises(ValueError):
-                1.1 == approx(1, **kwargs)
+                approx(1, **kwargs) == 1.1
 
     def test_reasonable_defaults(self):
         # Whatever the defaults are, they should work for numbers close to 1

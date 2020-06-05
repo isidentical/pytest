@@ -328,14 +328,16 @@ class Traceback(List[TracebackEntry]):
             code = x.frame.code
             codepath = code.path
             if (
-                (path is None or codepath == path)
+                ((path is None or codepath == path))
                 and (
-                    excludepath is None
-                    or not isinstance(codepath, py.path.local)
-                    or not codepath.relto(excludepath)
+                    (
+                        excludepath is None
+                        or not isinstance(codepath, py.path.local)
+                        or not codepath.relto(excludepath)
+                    )
                 )
-                and (lineno is None or x.lineno == lineno)
-                and (firstlineno is None or x.frame.code.firstlineno == firstlineno)
+                and ((lineno is None or x.lineno == lineno))
+                and (firstlineno is None or code.firstlineno == firstlineno)
             ):
                 return Traceback(x._rawentry, self._excinfo)
         return self
@@ -550,9 +552,8 @@ class ExceptionInfo(Generic[_E]):
         lines = format_exception_only(self.type, self.value)
         text = "".join(lines)
         text = text.rstrip()
-        if tryshort:
-            if text.startswith(self._striptext):
-                text = text[len(self._striptext) :]
+        if tryshort and text.startswith(self._striptext):
+            text = text[len(self._striptext) :]
         return text
 
     def errisinstance(
@@ -681,9 +682,11 @@ class FormattedExcinfo:
 
     def repr_args(self, entry: TracebackEntry) -> Optional["ReprFuncArgs"]:
         if self.funcargs:
-            args = []
-            for argname, argvalue in entry.frame.getargs(var=True):
-                args.append((argname, saferepr(argvalue)))
+            args = [
+                (argname, saferepr(argvalue))
+                for argname, argvalue in entry.frame.getargs(var=True)
+            ]
+
             return ReprFuncArgs(args)
         return None
 
@@ -730,31 +733,28 @@ class FormattedExcinfo:
         return lines
 
     def repr_locals(self, locals: Mapping[str, object]) -> Optional["ReprLocals"]:
-        if self.showlocals:
-            lines = []
-            keys = [loc for loc in locals if loc[0] != "@"]
-            keys.sort()
-            for name in keys:
-                value = locals[name]
-                if name == "__builtins__":
-                    lines.append("__builtins__ = <builtins>")
-                else:
+        if not self.showlocals:
+            return None
+        lines = []
+        keys = [loc for loc in locals if loc[0] != "@"]
+        keys.sort()
+        for name in keys:
+            value = locals[name]
+            if name == "__builtins__":
+                lines.append("__builtins__ = <builtins>")
+            else:
                     # This formatting could all be handled by the
                     # _repr() function, which is only reprlib.Repr in
                     # disguise, so is very configurable.
-                    if self.truncate_locals:
-                        str_repr = saferepr(value)
-                    else:
-                        str_repr = safeformat(value)
-                    # if len(str_repr) < 70 or not isinstance(value,
-                    #                            (list, tuple, dict)):
-                    lines.append("{:<10} = {}".format(name, str_repr))
-                    # else:
-                    #    self._line("%-10s =\\" % (name,))
-                    #    # XXX
-                    #    pprint.pprint(value, stream=self.excinfowriter)
-            return ReprLocals(lines)
-        return None
+                str_repr = saferepr(value) if self.truncate_locals else safeformat(value)
+                # if len(str_repr) < 70 or not isinstance(value,
+                #                            (list, tuple, dict)):
+                lines.append("{:<10} = {}".format(name, str_repr))
+                            # else:
+                            #    self._line("%-10s =\\" % (name,))
+                            #    # XXX
+                            #    pprint.pprint(value, stream=self.excinfowriter)
+        return ReprLocals(lines)
 
     def repr_traceback_entry(
         self, entry: TracebackEntry, excinfo: Optional[ExceptionInfo] = None
@@ -772,10 +772,12 @@ class FormattedExcinfo:
             reprargs = self.repr_args(entry) if not short else None
             s = self.get_source(source, line_index, excinfo, short=short)
             lines.extend(s)
-            if short:
-                message = "in %s" % (entry.name)
-            else:
-                message = excinfo and excinfo.typename or ""
+            message = (
+                "in %s" % (entry.name)
+                if short
+                else excinfo and excinfo.typename or ""
+            )
+
             path = self._makepath(entry.path)
             reprfileloc = ReprFileLocation(path, entry.lineno + 1, message)
             localsrepr = self.repr_locals(entry.locals)
@@ -1134,22 +1136,24 @@ class ReprFuncArgs(TerminalRepr):
     args = attr.ib(type=Sequence[Tuple[str, object]])
 
     def toterminal(self, tw: TerminalWriter) -> None:
-        if self.args:
-            linesofar = ""
-            for name, value in self.args:
-                ns = "{} = {}".format(name, value)
-                if len(ns) + len(linesofar) + 2 > tw.fullwidth:
-                    if linesofar:
-                        tw.line(linesofar)
-                    linesofar = ns
+        if not self.args:
+            return
+
+        linesofar = ""
+        for name, value in self.args:
+            ns = "{} = {}".format(name, value)
+            if len(ns) + len(linesofar) + 2 > tw.fullwidth:
+                if linesofar:
+                    tw.line(linesofar)
+                linesofar = ns
+            else:
+                if linesofar:
+                    linesofar += ", " + ns
                 else:
-                    if linesofar:
-                        linesofar += ", " + ns
-                    else:
-                        linesofar = ns
-            if linesofar:
-                tw.line(linesofar)
-            tw.line("")
+                    linesofar = ns
+        if linesofar:
+            tw.line(linesofar)
+        tw.line("")
 
 
 def getfslineno(obj: Any) -> Tuple[Union[str, py.path.local], int]:

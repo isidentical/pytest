@@ -890,7 +890,7 @@ class TestFDCapture:
         assert s == "hello"
 
     def test_simple_many(self, tmpfile):
-        for i in range(10):
+        for _ in range(10):
             self.test_simple(tmpfile)
 
     def test_simple_many_check_open_files(self, testdir):
@@ -1088,8 +1088,8 @@ class TestStdCapture:
         old = sys.stdin
         with self.getcapture(in_=True):
             newstdin = sys.stdin
-        assert newstdin != sys.stdin
-        assert sys.stdin is old
+        assert newstdin != old
+        assert old is old
 
     def test_stdin_nulled_by_default(self):
         print("XXX this test may well hang instead of crashing")
@@ -1153,7 +1153,7 @@ class TestStdCaptureFD(TestStdCapture):
 
     def test_many(self, capfd):
         with lsof_check():
-            for i in range(10):
+            for _ in range(10):
                 cap = StdCaptureFD()
                 cap.start_capturing()
                 cap.stop_capturing()

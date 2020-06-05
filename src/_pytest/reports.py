@@ -299,7 +299,7 @@ class TestReport(BaseReport):
         keywords = {x: 1 for x in item.keywords}
         excinfo = call.excinfo
         sections = []
-        if not call.excinfo:
+        if not excinfo:
             outcome = "passed"  # type: Literal["passed", "failed", "skipped"]
             # TODO: Improve this Any.
             longrepr = None  # type: Optional[Any]
@@ -313,9 +313,9 @@ class TestReport(BaseReport):
                 longrepr = (str(r.path), r.lineno, r.message)
             else:
                 outcome = "failed"
-                if call.when == "call":
+                if when == "call":
                     longrepr = item.repr_failure(excinfo)
-                else:  # exception in setup or teardown
+                else:    # exception in setup or teardown
                     longrepr = item._repr_failure_py(
                         excinfo, style=item.config.getoption("tbstyle", "auto")
                     )
@@ -404,8 +404,7 @@ def _report_to_json(report: BaseReport):
         for key, value in data.items():
             if hasattr(value, "__dict__"):
                 data[key] = attr.asdict(value)
-        entry_data = {"type": type(entry).__name__, "data": data}
-        return entry_data
+        return {"type": type(entry).__name__, "data": data}
 
     def serialize_repr_traceback(reprtraceback: ReprTraceback):
         result = attr.asdict(reprtraceback)

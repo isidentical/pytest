@@ -196,7 +196,7 @@ def _force_symlink(
 
 def make_numbered_dir(root: Path, prefix: str) -> Path:
     """create a directory with an increased number as suffix for the given prefix"""
-    for i in range(10):
+    for _ in range(10):
         # try up to 10 times to create the folder
         max_existing = max(map(parse_num, find_suffixes(root, prefix)), default=-1)
         new_number = max_existing + 1
@@ -328,7 +328,7 @@ def make_numbered_dir_with_cleanup(
 ) -> Path:
     """creates a numbered dir with a cleanup lock and removes old ones"""
     e = None
-    for i in range(10):
+    for _ in range(10):
         try:
             p = make_numbered_dir(root, prefix)
             lock_path = create_cleanup_lock(p)

@@ -141,10 +141,7 @@ def _is_doctest(config: Config, path: py.path.local, parent) -> bool:
     if path.ext in (".txt", ".rst") and parent.session.isinitpath(path):
         return True
     globs = config.getoption("doctestglob") or ["test*.txt"]
-    for glob in globs:
-        if path.check(fnmatch=glob):
-            return True
-    return False
+    return any(path.check(fnmatch=glob) for glob in globs)
 
 
 class ReprFailDoctest(TerminalRepr):
@@ -322,10 +319,7 @@ class DoctestItem(pytest.Item):
                 example = failure.example
                 test = failure.test
                 filename = test.filename
-                if test.lineno is None:
-                    lineno = None
-                else:
-                    lineno = test.lineno + example.lineno + 1
+                lineno = None if test.lineno is None else test.lineno + example.lineno + 1
                 message = type(failure).__name__
                 # TODO: ReprFileLocation doesn't expect a None lineno.
                 reprlocation = ReprFileLocation(filename, lineno, message)  # type: ignore[arg-type] # noqa: F821
@@ -648,10 +642,7 @@ def _init_checker_class() -> "Type[doctest.OutputChecker]":
                 exponent = w.group("exponent1")
                 if exponent is None:
                     exponent = w.group("exponent2")
-                if fraction is None:
-                    precision = 0
-                else:
-                    precision = len(fraction)
+                precision = 0 if fraction is None else len(fraction)
                 if exponent is not None:
                     precision -= int(exponent)
                 if float(w.group()) == approx(float(g.group()), abs=10 ** -precision):

@@ -280,7 +280,7 @@ def get_parametrized_fixture_keys(item: "nodes.Item", scopenum: int) -> Iterator
 def reorder_items(items: "Sequence[nodes.Item]") -> "List[nodes.Item]":
     argkeys_cache = {}  # type: Dict[int, Dict[nodes.Item, Dict[_Key, None]]]
     items_by_argkey = {}  # type: Dict[int, Dict[_Key, Deque[nodes.Item]]]
-    for scopenum in range(0, scopenum_function):
+    for scopenum in range(scopenum_function):
         d = {}  # type: Dict[nodes.Item, Dict[_Key, None]]
         argkeys_cache[scopenum] = d
         item_d = defaultdict(deque)  # type: Dict[_Key, Deque[nodes.Item]]
@@ -309,7 +309,7 @@ def fix_cache_order(
     argkeys_cache: "Dict[int, Dict[nodes.Item, Dict[_Key, None]]]",
     items_by_argkey: "Dict[int, Dict[_Key, Deque[nodes.Item]]]",
 ) -> None:
-    for scopenum in range(0, scopenum_function):
+    for scopenum in range(scopenum_function):
         for key in argkeys_cache[scopenum].get(item, []):
             items_by_argkey[scopenum][key].appendleft(item)
 
@@ -649,10 +649,7 @@ class FixtureRequest:
                 source_path = py.path.local(frameinfo.filename)
                 source_lineno = frameinfo.lineno
                 rel_source_path = source_path.relto(funcitem.config.rootdir)
-                if rel_source_path:
-                    source_path_str = rel_source_path
-                else:
-                    source_path_str = str(source_path)
+                source_path_str = rel_source_path if rel_source_path else str(source_path)
                 msg = (
                     "The requested fixture has no parameter defined for test:\n"
                     "    {}\n\n"
@@ -818,8 +815,11 @@ class FixtureLookupError(LookupError):
     def formatrepr(self) -> "FixtureLookupErrorRepr":
         tblines = []  # type: List[str]
         addline = tblines.append
-        stack = [self.request._pyfuncitem.obj]
-        stack.extend(map(lambda x: x.func, self.fixturestack))
+        stack = [
+            self.request._pyfuncitem.obj,
+            *map(lambda x: x.func, self.fixturestack),
+        ]
+
         msg = self.msg
         if msg is not None:
             # the last fixture raise an error, let's present

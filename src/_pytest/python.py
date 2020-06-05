@@ -650,9 +650,12 @@ class Package(Module):
         for path in this_path.visit(rec=self._recurse, bf=True, sort=True):
             # We will visit our own __init__.py file, in which case we skip it.
             is_file = path.isfile()
-            if is_file:
-                if path.basename == "__init__.py" and path.dirpath() == this_path:
-                    continue
+            if (
+                is_file
+                and path.basename == "__init__.py"
+                and path.dirpath() == this_path
+            ):
+                continue
 
             parts_ = parts(path.strpath)
             if any(
@@ -1086,7 +1089,7 @@ class Metafunc:
             num_ids = len(parameters)
 
         # num_ids == 0 is a special case: https://github.com/pytest-dev/pytest/issues/1849
-        if num_ids != len(parameters) and num_ids != 0:
+        if num_ids not in [len(parameters), 0]:
             msg = "In {}: {} parameter sets specified, with different number of ids: {}"
             fail(msg.format(func_name, len(parameters), num_ids), pytrace=False)
 
@@ -1415,11 +1418,10 @@ def _showfixtures_main(config: Config, session: Session) -> None:
     available.sort()
     currentmodule = None
     for baseid, module, bestrel, argname, fixturedef in available:
-        if currentmodule != module:
-            if not module.startswith("_pytest."):
-                tw.line()
-                tw.sep("-", "fixtures defined from {}".format(module))
-                currentmodule = module
+        if currentmodule != module and not module.startswith("_pytest."):
+            tw.line()
+            tw.sep("-", "fixtures defined from {}".format(module))
+            currentmodule = module
         if verbose <= 0 and argname[0] == "_":
             continue
         tw.write(argname, green=True)
@@ -1572,25 +1574,28 @@ class Function(PyobjMixin, nodes.Item):
         self._request._fillfixtures()
 
     def _prunetraceback(self, excinfo: ExceptionInfo) -> None:
-        if hasattr(self, "_obj") and not self.config.getoption("fulltrace", False):
-            code = _pytest._code.Code(get_real_func(self.obj))
-            path, firstlineno = code.path, code.firstlineno
-            traceback = excinfo.traceback
-            ntraceback = traceback.cut(path=path, firstlineno=firstlineno)
-            if ntraceback == traceback:
-                ntraceback = ntraceback.cut(path=path)
-                if ntraceback == traceback:
-                    ntraceback = ntraceback.filter(filter_traceback)
-                    if not ntraceback:
-                        ntraceback = traceback
+        if not hasattr(self, "_obj") or self.config.getoption("fulltrace", False):
+            return
+        code = _pytest._code.Code(get_real_func(self.obj))
+        path, firstlineno = code.path, code.firstlineno
+        traceback = excinfo.traceback
+        ntraceback = traceback.cut(path=path, firstlineno=firstlineno)
+        if ntraceback == traceback:
+            ntraceback = ntraceback.cut(path=path)
+        if ntraceback == traceback:
+            ntraceback = ntraceback.filter(filter_traceback)
+            if not ntraceback:
+                ntraceback = traceback
 
-            excinfo.traceback = ntraceback.filter()
+        excinfo.traceback = ntraceback.filter()
             # issue364: mark all but first and last frames to
             # only show a single-line message for each frame
-            if self.config.getoption("tbstyle", "auto") == "auto":
-                if len(excinfo.traceback) > 2:
-                    for entry in excinfo.traceback[1:-1]:
-                        entry.set_repr_style("short")
+        if (
+            self.config.getoption("tbstyle", "auto") == "auto"
+            and len(excinfo.traceback) > 2
+        ):
+            for entry in excinfo.traceback[1:-1]:
+                entry.set_repr_style("short")
 
     # TODO: Type ignored -- breaks Liskov Substitution.
     def repr_failure(  # type: ignore[override] # noqa: F821

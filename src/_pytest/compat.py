@@ -282,7 +282,7 @@ def get_real_func(obj):
     functools.wraps or functools.partial.
     """
     start_obj = obj
-    for i in range(100):
+    for _ in range(100):
         # __pytest_wrapped__ is set by @pytest.fixture when wrapping the fixture function
         # to trigger a warning if it gets called directly instead of by pytest: we don't
         # want to unwrap further than this otherwise we lose useful wrappings like @mock.patch (#3774)

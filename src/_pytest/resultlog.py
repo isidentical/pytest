@@ -75,17 +75,13 @@ class ResultLog:
             report=report, config=self.config
         )
         code = res[1]
-        if code == "x":
+        if code == "x" or code != "X" and not report.passed and not report.skipped:
             longrepr = str(report.longrepr)
-        elif code == "X":
+        elif code == "X" or report.passed:
             longrepr = ""
-        elif report.passed:
-            longrepr = ""
-        elif report.skipped:
+        else:
             assert report.longrepr is not None
             longrepr = str(report.longrepr[2])
-        else:
-            longrepr = str(report.longrepr)
         self.log_outcome(report, code, longrepr)
 
     def pytest_collectreport(self, report: CollectReport) -> None:

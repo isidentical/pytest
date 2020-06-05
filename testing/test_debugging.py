@@ -982,10 +982,7 @@ class TestDebuggingBreakpoints:
     @pytest.mark.skipif(
         not SUPPORTS_BREAKPOINT_BUILTIN, reason="Requires breakpoint() builtin"
     )
-    @pytest.mark.skipif(
-        not _ENVIRON_PYTHONBREAKPOINT == "",
-        reason="Requires breakpoint() default value",
-    )
+    @pytest.mark.skipif(_ENVIRON_PYTHONBREAKPOINT != "", reason="Requires breakpoint() default value")
     def test_sys_breakpoint_interception(self, testdir):
         p1 = testdir.makepyfile(
             """

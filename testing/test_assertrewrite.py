@@ -364,7 +364,7 @@ class TestAssertionRewrite:
 
         def f5() -> None:
             f = g = False
-            assert not f and not g
+            assert not (f or g)
 
         getmsg(f5, must_pass=True)
 
@@ -422,7 +422,7 @@ class TestAssertionRewrite:
 
         def f2() -> None:
             x = 1
-            assert x == 1 or x == 2
+            assert x in [1, 2]
 
         getmsg(f2, must_pass=True)
 
@@ -992,7 +992,6 @@ class TestAssertionRewriteHookDetails:
                 e = OSError()
                 e.errno = 10
                 raise e
-                yield
 
             monkeypatch.setattr(
                 _pytest.assertion.rewrite, "atomic_write", atomic_write_failed

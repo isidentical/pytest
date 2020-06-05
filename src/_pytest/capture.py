@@ -129,11 +129,7 @@ def _py36_windowsconsoleio_workaround(stream: TextIO) -> None:
         return
 
     def _reopen_stdio(f, mode):
-        if not buffered and mode[0] == "w":
-            buffering = 0
-        else:
-            buffering = -1
-
+        buffering = 0 if not buffered and mode[0] == "w" else -1
         return io.TextIOWrapper(
             open(os.dup(f.fileno()), mode, buffering),
             f.encoding,
@@ -560,24 +556,18 @@ class MultiCapture:
             self.in_.done()
 
     def readouterr(self) -> CaptureResult:
-        if self.out:
-            out = self.out.snap()
-        else:
-            out = ""
-        if self.err:
-            err = self.err.snap()
-        else:
-            err = ""
+        out = self.out.snap() if self.out else ""
+        err = self.err.snap() if self.err else ""
         return CaptureResult(out, err)
 
 
 def _get_multicapture(method: "_CaptureMethod") -> MultiCapture:
     if method == "fd":
         return MultiCapture(in_=FDCapture(0), out=FDCapture(1), err=FDCapture(2))
-    elif method == "sys":
-        return MultiCapture(in_=SysCapture(0), out=SysCapture(1), err=SysCapture(2))
     elif method == "no":
         return MultiCapture(in_=None, out=None, err=None)
+    elif method == "sys":
+        return MultiCapture(in_=SysCapture(0), out=SysCapture(1), err=SysCapture(2))
     elif method == "tee-sys":
         return MultiCapture(
             in_=None, out=SysCapture(1, tee=True), err=SysCapture(2, tee=True)

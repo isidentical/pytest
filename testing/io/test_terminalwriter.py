@@ -128,8 +128,8 @@ class TestTerminalWriter:
         tw.hasmarkup = True
         tw.line("x", bold=True)
         tw.write("x\n", red=True)
-        lines = tw.getlines()
         if sys.platform != "win32":
+            lines = tw.getlines()
             assert len(lines[0]) >= 2, lines
             assert len(lines[1]) >= 2, lines
 

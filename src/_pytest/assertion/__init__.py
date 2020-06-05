@@ -109,9 +109,8 @@ def pytest_collection(session: "Session") -> None:
     # so for example not in the master process of pytest-xdist
     # (which does not collect test modules)
     assertstate = session.config._store.get(assertstate_key, None)
-    if assertstate:
-        if assertstate.hook is not None:
-            assertstate.hook.set_session(session)
+    if assertstate and assertstate.hook is not None:
+        assertstate.hook.set_session(session)
 
 
 @hookimpl(tryfirst=True, hookwrapper=True)
@@ -171,9 +170,8 @@ def pytest_runtest_protocol(item: Item) -> Generator[None, None, None]:
 
 def pytest_sessionfinish(session: "Session") -> None:
     assertstate = session.config._store.get(assertstate_key, None)
-    if assertstate:
-        if assertstate.hook is not None:
-            assertstate.hook.set_session(None)
+    if assertstate and assertstate.hook is not None:
+        assertstate.hook.set_session(None)
 
 
 def pytest_assertrepr_compare(

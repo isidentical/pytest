@@ -41,9 +41,7 @@ class Option:
 
     @property
     def args(self):
-        values = []
-        values.append("--verbosity=%d" % self.verbosity)
-        return values
+        return ["--verbosity=%d" % self.verbosity]
 
 
 @pytest.fixture(

@@ -469,11 +469,7 @@ class PytestPluginManager(PluginManager):
         if self._noconftest:
             return []
 
-        if path.isfile():
-            directory = path.dirpath()
-        else:
-            directory = path
-
+        directory = path.dirpath() if path.isfile() else path
         # XXX these days we may rather want to use config.rootdir
         # and allow users to opt into looking into the rootdir parent
         # directories instead of requiring to specify confcutdir
@@ -594,9 +590,11 @@ class PytestPluginManager(PluginManager):
             # There is no interface with pluggy for this.
             if self._name2plugin.get(name, -1) is None:
                 del self._name2plugin[name]
-            if not name.startswith("pytest_"):
-                if self._name2plugin.get("pytest_" + name, -1) is None:
-                    del self._name2plugin["pytest_" + name]
+            if (
+                not name.startswith("pytest_")
+                and self._name2plugin.get("pytest_" + name, -1) is None
+            ):
+                del self._name2plugin["pytest_" + name]
             self.import_plugin(arg, consider_entry_points=True)
 
     def consider_conftest(self, conftestmodule) -> None:
@@ -895,10 +893,7 @@ class Config:
         return self
 
     def notify_exception(self, excinfo, option=None):
-        if option and getattr(option, "fulltrace", False):
-            style = "long"
-        else:
-            style = "native"
+        style = "long" if option and getattr(option, "fulltrace", False) else "native"
         excrepr = excinfo.getrepr(
             funcargs=True, showlocals=getattr(option, "showlocals", False), style=style
         )
@@ -929,9 +924,8 @@ class Config:
         for name in opt._short_opts + opt._long_opts:
             self._opt2dest[name] = opt.dest
 
-        if hasattr(opt, "default"):
-            if not hasattr(self.option, opt.dest):
-                setattr(self.option, opt.dest, opt.default)
+        if hasattr(opt, "default") and not hasattr(self.option, opt.dest):
+            setattr(self.option, opt.dest, opt.default)
 
     @hookimpl(trylast=True)
     def pytest_load_initial_conftests(self, early_config):
@@ -1105,11 +1099,10 @@ class Config:
             args = self._parser.parse_setoption(
                 args, self.option, namespace=self.option
             )
+            if not args and self.invocation_dir == self.rootdir:
+                args = self.getini("testpaths")
             if not args:
-                if self.invocation_dir == self.rootdir:
-                    args = self.getini("testpaths")
-                if not args:
-                    args = [str(self.invocation_dir)]
+                args = [str(self.invocation_dir)]
             self.args = args
         except PrintHelp:
             pass
@@ -1150,10 +1143,7 @@ class Config:
                 return []
         if type == "pathlist":
             dp = py.path.local(self.inicfg.config.path).dirpath()
-            values = []
-            for relpath in shlex.split(value):
-                values.append(dp.join(relpath, abs=True))
-            return values
+            return [dp.join(relpath, abs=True) for relpath in shlex.split(value)]
         elif type == "args":
             return shlex.split(value)
         elif type == "linelist":
@@ -1263,10 +1253,10 @@ def create_terminal_writer(config: Config, *args, **kwargs) -> TerminalWriter:
     and has access to a config object should use this function.
     """
     tw = TerminalWriter(*args, **kwargs)
-    if config.option.color == "yes":
-        tw.hasmarkup = True
     if config.option.color == "no":
         tw.hasmarkup = False
+    elif config.option.color == "yes":
+        tw.hasmarkup = True
     return tw
 
 

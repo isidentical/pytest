@@ -89,9 +89,10 @@ def merge_family(left, right) -> None:
     left.update(result)
 
 
-families = {}
-families["_base"] = {"testcase": ["classname", "name"]}
-families["_base_legacy"] = {"testcase": ["file", "line", "url"]}
+families = {
+    "_base": {"testcase": ["classname", "name"]},
+    "_base_legacy": {"testcase": ["file", "line", "url"]},
+}
 
 # xUnit 1.x inherits legacy attributes
 families["xunit1"] = families["_base"].copy()
@@ -159,7 +160,7 @@ class _NodeReporter:
         # Filter out attributes not permitted by this test family.
         # Including custom attributes because they are not valid here.
         temp_attrs = {}
-        for key in self.attrs.keys():
+        for key in self.attrs:
             if key in families[self.family]["testcase"]:
                 temp_attrs[key] = self.attrs[key]
         self.attrs = temp_attrs

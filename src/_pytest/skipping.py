@@ -115,9 +115,8 @@ def check_xfail_no_run(item: Item) -> None:
     """check xfail(run=False)"""
     if not item.config.option.runxfail:
         evalxfail = item._store[evalxfail_key]
-        if evalxfail.istrue():
-            if not evalxfail.get("run", True):
-                xfail("[NOTRUN] " + evalxfail.getexplanation())
+        if evalxfail.istrue() and not evalxfail.get("run", True):
+            xfail("[NOTRUN] " + evalxfail.getexplanation())
 
 
 def check_strict_xfail(pyfuncitem: Function) -> None:

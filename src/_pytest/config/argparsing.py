@@ -49,9 +49,8 @@ class Parser:
         self.extra_info = {}  # type: Dict[str, Any]
 
     def processoption(self, option: "Argument") -> None:
-        if self._processopt:
-            if option.dest:
-                self._processopt(option)
+        if self._processopt and option.dest:
+            self._processopt(option)
 
     def getgroup(
         self, name: str, description: str = "", after: Optional[str] = None
@@ -300,7 +299,7 @@ class Argument:
                     self,
                 )
             elif len(opt) == 2:
-                if not (opt[0] == "-" and opt[1] != "-"):
+                if opt[0] != "-" or opt[1] == "-":
                     raise ArgumentError(
                         "invalid short option string %r: "
                         "must be of the form -x, (x any non-dash char)" % opt,
@@ -308,7 +307,7 @@ class Argument:
                     )
                 self._short_opts.append(opt)
             else:
-                if not (opt[0:2] == "--" and opt[2] != "-"):
+                if opt[0:2] != "--" or opt[2] == "-":
                     raise ArgumentError(
                         "invalid long option string %r: "
                         "must start with --, followed by non-dash" % opt,
@@ -425,7 +424,7 @@ class MyOptionParser(argparse.ArgumentParser):
         ) -> Optional[Tuple[Optional[argparse.Action], str, Optional[str]]]:
             if not arg_string:
                 return None
-            if not arg_string[0] in self.prefix_chars:
+            if arg_string[0] not in self.prefix_chars:
                 return None
             if arg_string in self._option_string_actions:
                 action = self._option_string_actions[arg_string]
@@ -448,9 +447,11 @@ class MyOptionParser(argparse.ArgumentParser):
                 elif len(option_tuples) == 1:
                     (option_tuple,) = option_tuples
                     return option_tuple
-            if self._negative_number_matcher.match(arg_string):
-                if not self._has_negative_number_optionals:
-                    return None
+            if (
+                self._negative_number_matcher.match(arg_string)
+                and not self._has_negative_number_optionals
+            ):
+                return None
             if " " in arg_string:
                 return None
             return None, arg_string, None

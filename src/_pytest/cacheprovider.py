@@ -201,7 +201,7 @@ class LFPluginCollWrapper:
 
                 # Only filter with known failures.
                 if not self._collected_at_least_one_failure:
-                    if not any(x.nodeid in lastfailed for x in result):
+                    if all(x.nodeid not in lastfailed for x in result):
                         return
                     self.lfplugin.config.pluginmanager.register(
                         LFPluginCollSkipfiles(self.lfplugin), "lfplugin-collskip"
@@ -230,13 +230,15 @@ class LFPluginCollSkipfiles:
     def pytest_make_collect_report(
         self, collector: nodes.Collector
     ) -> Optional[CollectReport]:
-        if isinstance(collector, Module):
-            if Path(str(collector.fspath)) not in self.lfplugin._last_failed_paths:
-                self.lfplugin._skipped_files += 1
+        if (
+            isinstance(collector, Module)
+            and Path(str(collector.fspath)) not in self.lfplugin._last_failed_paths
+        ):
+            self.lfplugin._skipped_files += 1
 
-                return CollectReport(
-                    collector.nodeid, "passed", longrepr=None, result=[]
-                )
+            return CollectReport(
+                collector.nodeid, "passed", longrepr=None, result=[]
+            )
         return None
 
 

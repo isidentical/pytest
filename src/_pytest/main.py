@@ -301,7 +301,7 @@ def _in_venv(path: py.path.local) -> bool:
         "Activate.bat",
         "Activate.ps1",
     )
-    return any([fname.basename in activates for fname in bindir.listdir()])
+    return any(fname.basename in activates for fname in bindir.listdir())
 
 
 def pytest_ignore_collect(
@@ -565,14 +565,16 @@ class Session(nodes.FSCollector):
 
                 if parent.isdir():
                     pkginit = parent.join("__init__.py")
-                    if pkginit.isfile():
-                        if pkginit not in self._collection_node_cache1:
-                            col = self._collectfile(pkginit, handle_dupes=False)
-                            if col:
-                                if isinstance(col[0], Package):
-                                    self._collection_pkg_roots[parent] = col[0]
-                                # always store a list in the cache, matchnodes expects it
-                                self._collection_node_cache1[col[0].fspath] = [col[0]]
+                    if (
+                        pkginit.isfile()
+                        and pkginit not in self._collection_node_cache1
+                    ):
+                        col = self._collectfile(pkginit, handle_dupes=False)
+                        if col:
+                            if isinstance(col[0], Package):
+                                self._collection_pkg_roots[parent] = col[0]
+                            # always store a list in the cache, matchnodes expects it
+                            self._collection_node_cache1[col[0].fspath] = [col[0]]
 
         # If it's a directory argument, recurse and look for any Subpackages.
         # Let the Package collector deal with subnodes, don't collect here.
@@ -684,7 +686,7 @@ class Session(nodes.FSCollector):
     def _matchnodes(
         self, matching: Sequence[Union[nodes.Item, nodes.Collector]], names: List[str],
     ) -> Sequence[Union[nodes.Item, nodes.Collector]]:
-        if not matching or not names:
+        if not (matching and names):
             return matching
         name = names[0]
         assert name

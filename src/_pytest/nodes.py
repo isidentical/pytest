@@ -585,9 +585,10 @@ class FSCollector(Collector):
             path, path.isdir(), path.exists(), path.islink()
         )
         ihook = self.gethookproxy(path)
-        if not self.isinitpath(path):
-            if ihook.pytest_ignore_collect(path=path, config=self.config):
-                return ()
+        if not self.isinitpath(path) and ihook.pytest_ignore_collect(
+            path=path, config=self.config
+        ):
+            return ()
 
         if handle_dupes:
             keepduplicates = self.config.getoption("keepduplicates")

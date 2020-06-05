@@ -96,8 +96,7 @@ def pytest_configure(config: Config) -> None:
 class LsofFdLeakChecker:
     def get_open_files(self):
         out = self._exec_lsof()
-        open_files = self._parse_lsof_output(out)
-        return open_files
+        return self._parse_lsof_output(out)
 
     def _exec_lsof(self):
         pid = os.getpid()
@@ -149,13 +148,15 @@ class LsofFdLeakChecker:
         new_fds = {t[0] for t in lines2} - {t[0] for t in lines1}
         leaked_files = [t for t in lines2 if t[0] in new_fds]
         if leaked_files:
-            error = []
-            error.append("***** %s FD leakage detected" % len(leaked_files))
-            error.extend([str(f) for f in leaked_files])
-            error.append("*** Before:")
-            error.extend([str(f) for f in lines1])
-            error.append("*** After:")
-            error.extend([str(f) for f in lines2])
+            error = [
+                "***** %s FD leakage detected" % len(leaked_files),
+                *[str(f) for f in leaked_files],
+                "*** Before:",
+                *[str(f) for f in lines1],
+                "*** After:",
+                *[str(f) for f in lines2],
+            ]
+
             error.append(error[0])
             error.append("*** function %s:%s: %s " % item.location)
             error.append("See issue #2366")
@@ -261,8 +262,11 @@ class HookRecorder:
             if call._name == name:
                 del self.calls[i]
                 return call
-        lines = ["could not find call {!r}, in:".format(name)]
-        lines.extend(["  %s" % x for x in self.calls])
+        lines = [
+            "could not find call {!r}, in:".format(name),
+            *["  %s" % x for x in self.calls],
+        ]
+
         pytest.fail("\n".join(lines))
 
     def getcall(self, name: str) -> ParsedCall:
@@ -1160,9 +1164,7 @@ class Testdir:
         )
         kw["env"] = env
 
-        if stdin is Testdir.CLOSE_STDIN:
-            kw["stdin"] = subprocess.PIPE
-        elif isinstance(stdin, bytes):
+        if stdin is Testdir.CLOSE_STDIN or isinstance(stdin, bytes):
             kw["stdin"] = subprocess.PIPE
         else:
             kw["stdin"] = stdin

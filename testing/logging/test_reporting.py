@@ -610,13 +610,13 @@ def test_log_cli_auto_enable(testdir, cli_args):
                 "=* 1 passed in *=",
             ]
         )
-        assert "INFO" not in stdout
     else:
         result.stdout.fnmatch_lines(
             ["*test_log_cli_auto_enable*100%*", "=* 1 passed in *="]
         )
-        assert "INFO" not in stdout
         assert "WARNING" not in stdout
+
+    assert "INFO" not in stdout
 
 
 def test_log_file_cli(testdir):

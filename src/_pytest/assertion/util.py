@@ -75,10 +75,7 @@ def _format_lines(lines: Sequence[str]) -> List[str]:
     stackcnt = [0]
     for line in lines[1:]:
         if line.startswith("{"):
-            if stackcnt[-1]:
-                s = "and   "
-            else:
-                s = "where "
+            s = "and   " if stackcnt[-1] else "where "
             stack.append(len(result))
             stackcnt[-1] += 1
             stackcnt.append(0)

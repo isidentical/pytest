@@ -109,8 +109,8 @@ class TestDeprecatedCall:
         self.test_deprecated_call()
         assert onceregistry == warnings.onceregistry  # type: ignore
         assert filters == warnings.filters  # type: ignore
-        assert warn is warnings.warn
-        assert warn_explicit is warnings.warn_explicit
+        assert warn is warn
+        assert warn_explicit is warn_explicit
 
     def test_deprecated_explicit_call_raises(self) -> None:
         with pytest.raises(pytest.fail.Exception):
@@ -209,8 +209,8 @@ class TestDeprecatedCall:
 
 class TestWarns:
     def test_check_callable(self) -> None:
-        source = "warnings.warn('w1', RuntimeWarning)"
         with pytest.raises(TypeError, match=r".* must be callable"):
+            source = "warnings.warn('w1', RuntimeWarning)"
             pytest.warns(RuntimeWarning, source)  # type: ignore
 
     def test_several_messages(self) -> None:

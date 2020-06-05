@@ -150,10 +150,7 @@ def determine_setup(
                 if dirs != [ancestor]:
                     rootdir, inifile, inicfg = getcfg(dirs, config=config)
                 if rootdir is None:
-                    if config is not None:
-                        cwd = config.invocation_dir
-                    else:
-                        cwd = py.path.local()
+                    cwd = config.invocation_dir if config is not None else py.path.local()
                     rootdir = get_common_ancestor([cwd, ancestor])
                     is_fs_root = os.path.splitdrive(str(rootdir))[1] == "/"
                     if is_fs_root:

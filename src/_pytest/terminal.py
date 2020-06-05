@@ -500,7 +500,7 @@ class TerminalReporter:
         else:
             markup = None
         self._add_stats(category, [rep])
-        if not letter and not word:
+        if not (letter or word):
             # probably passed setup/teardown
             return
         running_xdist = hasattr(rep, "node")
@@ -508,12 +508,10 @@ class TerminalReporter:
             was_xfail = hasattr(report, "wasxfail")
             if rep.passed and not was_xfail:
                 markup = {"green": True}
-            elif rep.passed and was_xfail:
+            elif rep.passed or not rep.failed and rep.skipped:
                 markup = {"yellow": True}
             elif rep.failed:
                 markup = {"red": True}
-            elif rep.skipped:
-                markup = {"yellow": True}
             else:
                 markup = {}
         if self.verbosity <= 0:
@@ -630,10 +628,7 @@ class TerminalReporter:
         skipped = len(self.stats.get("skipped", []))
         deselected = len(self.stats.get("deselected", []))
         selected = self._numcollected - errors - skipped - deselected
-        if final:
-            line = "collected "
-        else:
-            line = "collecting "
+        line = "collected " if final else "collecting "
         line += (
             str(self._numcollected) + " item" + ("" if self._numcollected == 1 else "s")
         )
@@ -861,11 +856,7 @@ class TerminalReporter:
     # summaries for sessionfinish
     #
     def getreports(self, name: str):
-        values = []
-        for x in self.stats.get(name, []):
-            if not hasattr(x, "_pdbshown"):
-                values.append(x)
-        return values
+        return [x for x in self.stats.get(name, []) if not hasattr(x, "_pdbshown")]
 
     def summary_warnings(self) -> None:
         if self.hasopt("w"):
@@ -925,18 +916,19 @@ class TerminalReporter:
             self._tw.line("-- Docs: https://docs.pytest.org/en/latest/warnings.html")
 
     def summary_passes(self) -> None:
-        if self.config.option.tbstyle != "no":
-            if self.hasopt("P"):
-                reports = self.getreports("passed")  # type: List[TestReport]
-                if not reports:
-                    return
-                self.write_sep("=", "PASSES")
-                for rep in reports:
-                    if rep.sections:
-                        msg = self._getfailureheadline(rep)
-                        self.write_sep("_", msg, green=True, bold=True)
-                        self._outrep_summary(rep)
-                    self._handle_teardown_sections(rep.nodeid)
+        if self.config.option.tbstyle == "no":
+            return
+        if self.hasopt("P"):
+            reports = self.getreports("passed")  # type: List[TestReport]
+            if not reports:
+                return
+            self.write_sep("=", "PASSES")
+            for rep in reports:
+                if rep.sections:
+                    msg = self._getfailureheadline(rep)
+                    self.write_sep("_", msg, green=True, bold=True)
+                    self._outrep_summary(rep)
+                self._handle_teardown_sections(rep.nodeid)
 
     def _get_teardown_reports(self, nodeid: str) -> List[TestReport]:
         reports = self.getreports("")
@@ -964,36 +956,37 @@ class TerminalReporter:
                 self._tw.line(content)
 
     def summary_failures(self) -> None:
-        if self.config.option.tbstyle != "no":
-            reports = self.getreports("failed")  # type: List[BaseReport]
-            if not reports:
-                return
-            self.write_sep("=", "FAILURES")
+        if self.config.option.tbstyle == "no":
+            return
+        reports = self.getreports("failed")  # type: List[BaseReport]
+        if not reports:
+            return
+        self.write_sep("=", "FAILURES")
+        for rep in reports:
             if self.config.option.tbstyle == "line":
-                for rep in reports:
-                    line = self._getcrashline(rep)
-                    self.write_line(line)
+                line = self._getcrashline(rep)
+                self.write_line(line)
             else:
-                for rep in reports:
-                    msg = self._getfailureheadline(rep)
-                    self.write_sep("_", msg, red=True, bold=True)
-                    self._outrep_summary(rep)
-                    self._handle_teardown_sections(rep.nodeid)
-
-    def summary_errors(self) -> None:
-        if self.config.option.tbstyle != "no":
-            reports = self.getreports("error")  # type: List[BaseReport]
-            if not reports:
-                return
-            self.write_sep("=", "ERRORS")
-            for rep in self.stats["error"]:
                 msg = self._getfailureheadline(rep)
-                if rep.when == "collect":
-                    msg = "ERROR collecting " + msg
-                else:
-                    msg = "ERROR at {} of {}".format(rep.when, msg)
                 self.write_sep("_", msg, red=True, bold=True)
                 self._outrep_summary(rep)
+                self._handle_teardown_sections(rep.nodeid)
+
+    def summary_errors(self) -> None:
+        if self.config.option.tbstyle == "no":
+            return
+        reports = self.getreports("error")  # type: List[BaseReport]
+        if not reports:
+            return
+        self.write_sep("=", "ERRORS")
+        for rep in self.stats["error"]:
+            msg = self._getfailureheadline(rep)
+            if rep.when == "collect":
+                msg = "ERROR collecting " + msg
+            else:
+                msg = "ERROR at {} of {}".format(rep.when, msg)
+            self.write_sep("_", msg, red=True, bold=True)
+            self._outrep_summary(rep)
 
     def _outrep_summary(self, rep: BaseReport) -> None:
         rep.toterminal(self._tw)
@@ -1040,7 +1033,6 @@ class TerminalReporter:
             fullwidth += len(markup_for_end_sep)
             msg += markup_for_end_sep
 
-        if display_sep:
             self.write_sep("=", msg, fullwidth=fullwidth, **main_markup)
         else:
             self.write_line(msg, **main_markup)
@@ -1163,8 +1155,7 @@ class TerminalReporter:
 
 
 def _get_pos(config: Config, rep: BaseReport):
-    nodeid = config.cwd_relative_nodeid(rep.nodeid)
-    return nodeid
+    return config.cwd_relative_nodeid(rep.nodeid)
 
 
 def _get_line_with_reprcrash_message(
